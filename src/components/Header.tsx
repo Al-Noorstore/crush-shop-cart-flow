@@ -1,8 +1,9 @@
-import { Search, ShoppingCart, User, Menu, Crown } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, Crown, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HeaderProps {
   cartItemCount: number;
@@ -10,6 +11,7 @@ interface HeaderProps {
   onSearchChange: (query: string) => void;
   onCartClick: () => void;
   onAdminClick: () => void;
+  onCustomerAuthClick: () => void;
 }
 
 export const Header = ({
@@ -18,8 +20,10 @@ export const Header = ({
   onSearchChange,
   onCartClick,
   onAdminClick,
+  onCustomerAuthClick,
 }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { currentCustomer, customerLogout, isCustomerLoggedIn } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border shadow-sm">
@@ -56,6 +60,33 @@ export const Header = ({
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
+            {/* Customer Auth */}
+            {isCustomerLoggedIn ? (
+              <div className="hidden md:flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">
+                  Hi, {currentCustomer?.firstName}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={customerLogout}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCustomerAuthClick}
+                className="hidden md:flex"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Sign In
+              </Button>
+            )}
+
             {/* Admin Button */}
             <Button
               variant="outline"
@@ -63,7 +94,7 @@ export const Header = ({
               onClick={onAdminClick}
               className="hidden md:flex"
             >
-              <User className="w-4 h-4 mr-2" />
+              <Crown className="w-4 h-4 mr-2" />
               Admin
             </Button>
 
@@ -97,12 +128,36 @@ export const Header = ({
         {isMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-border pt-4">
             <div className="flex flex-col space-y-2">
+              {/* Customer Auth - Mobile */}
+              {isCustomerLoggedIn ? (
+                <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                  <span className="text-sm">Hi, {currentCustomer?.firstName}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={customerLogout}
+                  >
+                    <LogOut className="w-4 h-4 mr-1" />
+                    Logout
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  onClick={onCustomerAuthClick}
+                  className="justify-start"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Sign In / Sign Up
+                </Button>
+              )}
+
               <Button
                 variant="ghost"
                 onClick={onAdminClick}
                 className="justify-start"
               >
-                <User className="w-4 h-4 mr-2" />
+                <Crown className="w-4 h-4 mr-2" />
                 Admin Panel
               </Button>
               <div className="relative">

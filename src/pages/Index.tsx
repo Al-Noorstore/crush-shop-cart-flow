@@ -5,13 +5,17 @@ import { ProductModal } from "@/components/ProductModal";
 import { Cart, CartItem } from "@/components/Cart";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { AdminPanel } from "@/components/AdminPanel";
+import { AdminLogin } from "@/components/AdminLogin";
+import { CustomerAuth, CustomerUser } from "@/components/CustomerAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Filter, SortAsc, Grid, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const { toast } = useToast();
+  const { isAdminLoggedIn, setIsAdminLoggedIn, setCurrentCustomer } = useAuth();
   
   // Sample product data
   const [products, setProducts] = useState<Product[]>([
@@ -121,6 +125,8 @@ const Index = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isCustomerAuthOpen, setIsCustomerAuthOpen] = useState(false);
 
   // Get unique categories
   const categories = ["All", ...Array.from(new Set(products.map(p => p.category)))];
@@ -208,6 +214,24 @@ const Index = () => {
     setIsCheckoutOpen(true);
   };
 
+  const handleAdminClick = () => {
+    if (isAdminLoggedIn) {
+      setIsAdminOpen(true);
+    } else {
+      setIsAdminLoginOpen(true);
+    }
+  };
+
+  const handleAdminLoginSuccess = () => {
+    setIsAdminLoginOpen(false);
+    setIsAdminOpen(true);
+  };
+
+  const handleCustomerAuthSuccess = (user: CustomerUser) => {
+    setCurrentCustomer(user);
+    setIsCustomerAuthOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -216,7 +240,8 @@ const Index = () => {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCartClick={() => setIsCartOpen(true)}
-        onAdminClick={() => setIsAdminOpen(true)}
+        onAdminClick={handleAdminClick}
+        onCustomerAuthClick={() => setIsCustomerAuthOpen(true)}
       />
 
       {/* Hero Section */}
@@ -415,11 +440,23 @@ const Index = () => {
         orderTotal={getCartTotal()}
       />
 
+      <AdminLogin
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
+        onSuccess={handleAdminLoginSuccess}
+      />
+
       <AdminPanel
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
         products={products}
         onUpdateProducts={setProducts}
+      />
+
+      <CustomerAuth
+        isOpen={isCustomerAuthOpen}
+        onClose={() => setIsCustomerAuthOpen(false)}
+        onSuccess={handleCustomerAuthSuccess}
       />
     </div>
   );

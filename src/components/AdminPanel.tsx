@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, Package, Users, BarChart3, Settings, X, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Users, BarChart3, Settings, X, Upload, Key, LogOut, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Product } from "./ProductCard";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -21,9 +22,21 @@ type AdminTab = "products" | "orders" | "analytics" | "settings";
 
 export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: AdminPanelProps) => {
   const { toast } = useToast();
+  const { adminLogout } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>("products");
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
   const [productForm, setProductForm] = useState({
     name: "",
     price: "",
@@ -116,6 +129,64 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
     });
   };
 
+  const handlePasswordChange = () => {
+    const currentAdminPassword = localStorage.getItem('adminPassword') || '548413';
+    
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all password fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (passwordForm.currentPassword !== currentAdminPassword) {
+      toast({
+        title: "Incorrect Password",
+        description: "Current password is incorrect.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "New passwords do not match.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (passwordForm.newPassword.length < 6) {
+      toast({
+        title: "Weak Password",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    localStorage.setItem('adminPassword', passwordForm.newPassword);
+    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setIsPasswordChangeOpen(false);
+    
+    toast({
+      title: "Password Updated",
+      description: "Admin password has been changed successfully.",
+    });
+  };
+
+  const handleLogout = () => {
+    adminLogout();
+    onClose();
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out of admin panel.",
+    });
+  };
+
   const TabButton = ({ tab, icon: Icon, label }: { tab: AdminTab; icon: any; label: string }) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -130,9 +201,20 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-primary" />
-            MR Crush Shop - Admin Panel
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-primary" />
+              MR Crush Shop - Admin Panel
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="text-destructive hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
@@ -266,6 +348,30 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
             {activeTab === "settings" && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold">Settings</h2>
+                
+                {/* Security Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Key className="w-4 h-4" />
+                      Security Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Button 
+                      onClick={() => setIsPasswordChangeOpen(true)}
+                      className="btn-primary"
+                    >
+                      <Key className="w-4 h-4 mr-2" />
+                      Change Admin Password
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Change your admin panel access password for enhanced security.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Store Settings */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Store Settings</CardTitle>
@@ -278,7 +384,7 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
                       </div>
                       <div className="space-y-2">
                         <Label>Store Email</Label>
-                        <Input value="admin@mrcrushop.com" className="form-input" />
+                        <Input value="Info.mrcrushshop@gmail.com" className="form-input" />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -410,6 +516,113 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
                   {editingProduct ? "Update Product" : "Add Product"}
                 </Button>
                 <Button onClick={() => setIsProductModalOpen(false)} variant="outline">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Password Change Modal */}
+        <Dialog open={isPasswordChangeOpen} onOpenChange={setIsPasswordChangeOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                Change Admin Password
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Current Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showPasswords.current ? "text" : "password"}
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                    placeholder="Enter current password"
+                    className="form-input pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}
+                  >
+                    {showPasswords.current ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>New Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showPasswords.new ? "text" : "password"}
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                    placeholder="Enter new password"
+                    className="form-input pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})}
+                  >
+                    {showPasswords.new ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Confirm New Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showPasswords.confirm ? "text" : "password"}
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                    placeholder="Confirm new password"
+                    className="form-input pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})}
+                  >
+                    {showPasswords.confirm ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button onClick={handlePasswordChange} className="btn-primary">
+                  Update Password
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setIsPasswordChangeOpen(false);
+                    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                  }} 
+                  variant="outline"
+                >
                   Cancel
                 </Button>
               </div>
