@@ -1,6 +1,8 @@
 import { ShoppingCart, Eye, Heart, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useCountryDetection } from "@/hooks/useCountryDetection";
+import { usePricing } from "@/hooks/usePricing";
 
 export interface Product {
   id: number;
@@ -22,6 +24,10 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ product, onQuickView, onAddToCart }: ProductCardProps) => {
+  const { getCountryData } = useCountryDetection();
+  const countryData = getCountryData();
+  const { formatPrice } = usePricing(countryData);
+  
   const discountPercentage = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
@@ -113,11 +119,11 @@ export const ProductCard = ({ product, onQuickView, onAddToCart }: ProductCardPr
         {/* Price */}
         <div className="flex items-center gap-2">
           <span className="price-text">
-            ${product.price.toFixed(2)}
+            {formatPrice(product.price)}
           </span>
           {product.originalPrice && (
             <span className="original-price">
-              ${product.originalPrice.toFixed(2)}
+              {formatPrice(product.originalPrice)}
             </span>
           )}
         </div>

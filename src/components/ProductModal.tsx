@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Product } from "./ProductCard";
+import { useCountryDetection } from "@/hooks/useCountryDetection";
+import { usePricing } from "@/hooks/usePricing";
 
 interface ProductModalProps {
   product: Product | null;
@@ -20,6 +22,10 @@ export const ProductModal = ({
   onPlaceOrder,
 }: ProductModalProps) => {
   if (!product) return null;
+
+  const { getCountryData } = useCountryDetection();
+  const countryData = getCountryData();
+  const { formatPrice, formatShippingCost } = usePricing(countryData);
 
   const discountPercentage = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -106,17 +112,22 @@ export const ProductModal = ({
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <span className="text-4xl font-bold text-primary">
-                  ${product.price.toFixed(2)}
+                  {formatPrice(product.price)}
                 </span>
                 {product.originalPrice && (
                   <span className="text-xl text-muted-foreground line-through">
-                    ${product.originalPrice.toFixed(2)}
+                    {formatPrice(product.originalPrice)}
                   </span>
                 )}
               </div>
-              {product.isOnSale && (
+              {product.isOnSale && product.originalPrice && (
                 <p className="text-success font-semibold">
-                  You save ${(product.originalPrice! - product.price).toFixed(2)}!
+                  You save {formatPrice(product.originalPrice - product.price)}!
+                </p>
+              )}
+              {countryData && (
+                <p className="text-sm text-muted-foreground">
+                  Price in {countryData.name} ({countryData.currency})
                 </p>
               )}
             </div>
@@ -188,17 +199,25 @@ export const ProductModal = ({
             <div className="border-t pt-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipping:</span>
-                  <span className="font-medium">Free worldwide shipping</span>
+                  <span className="text-muted-foreground">Shipping to {countryData?.name || 'your location'}:</span>
+                  <span className="font-medium">{formatShippingCost()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Delivery:</span>
-                  <span className="font-medium">3-7 business days</span>
+                  <span className="font-medium">
+                    {countryData?.deliveryDays || 3}-{(countryData?.deliveryDays || 3) + 4} business days
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Returns:</span>
                   <span className="font-medium">30-day return policy</span>
                 </div>
+                {countryData && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Currency:</span>
+                    <span className="font-medium">{countryData.currency}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

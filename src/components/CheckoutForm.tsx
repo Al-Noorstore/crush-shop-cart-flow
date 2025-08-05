@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreditCard, MapPin, User, Phone, Mail, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CartItem } from "./Cart";
+import { CountrySelector } from "./CountrySelector";
 import { useToast } from "@/hooks/use-toast";
+import { useCountryDetection } from "@/hooks/useCountryDetection";
+import { usePricing } from "@/hooks/usePricing";
 
 interface CheckoutFormProps {
   isOpen: boolean;
@@ -33,6 +36,25 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Country detection and pricing hooks
+  const { 
+    detectedCountry, 
+    selectedCountry, 
+    setSelectedCountry, 
+    detectCountryFromPhone, 
+    getCountryData,
+    countries 
+  } = useCountryDetection();
+  
+  const countryData = getCountryData();
+  const { 
+    convertPrice, 
+    formatPrice, 
+    getShippingCost, 
+    formatShippingCost, 
+    getCurrencySymbol 
+  } = usePricing(countryData);
+  
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: "",
     lastName: "",
@@ -42,12 +64,25 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
     city: "",
     state: "",
     zipCode: "",
-    country: "",
+    country: selectedCountry,
     notes: ""
   });
 
+  // Update country in shipping info when selected country changes
+  useEffect(() => {
+    setShippingInfo(prev => ({ ...prev, country: selectedCountry }));
+  }, [selectedCountry]);
+
   const handleInputChange = (field: keyof ShippingInfo, value: string) => {
     setShippingInfo(prev => ({ ...prev, [field]: value }));
+    
+    // Auto-detect country from phone number
+    if (field === 'phone') {
+      const detected = detectCountryFromPhone(value);
+      if (detected) {
+        setShippingInfo(prev => ({ ...prev, country: detected }));
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,11 +93,22 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
       // Simulate form submission
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Calculate total with shipping and currency conversion
+      const convertedSubtotal = cartItems.reduce((sum, item) => 
+        sum + convertPrice(item.price) * item.quantity, 0
+      );
+      const shippingCost = getShippingCost();
+      const finalTotal = convertedSubtotal + shippingCost;
+
       // In a real app, you would send this data to your backend
       const orderData = {
         items: cartItems,
-        shippingInfo,
-        total: orderTotal,
+        shippingInfo: { ...shippingInfo, country: selectedCountry },
+        subtotal: convertedSubtotal,
+        shippingCost,
+        total: finalTotal,
+        currency: countryData?.currency || 'USD',
+        countryCode: selectedCountry,
         orderDate: new Date().toISOString(),
         orderId: Math.random().toString(36).substr(2, 9).toUpperCase()
       };
@@ -231,17 +277,12 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="country">Country *</Label>
-                      <Input
-                        id="country"
-                        value={shippingInfo.country}
-                        onChange={(e) => handleInputChange("country", e.target.value)}
-                        placeholder="United States"
-                        className="form-input"
-                        required
-                      />
-                    </div>
+                     <CountrySelector
+                       countries={countries}
+                       selectedCountry={selectedCountry}
+                       onCountrySelect={setSelectedCountry}
+                       detectedCountry={detectedCountry}
+                     />
                   </div>
 
                   <div className="space-y-2">
@@ -284,27 +325,39 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
                           Qty: {item.quantity}
                         </p>
                       </div>
-                      <span className="font-semibold">
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </span>
+                       <span className="font-semibold">
+                         {formatPrice(item.price * item.quantity)}
+                       </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="space-y-2 pt-4">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal:</span>
-                    <span>${orderTotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Shipping:</span>
-                    <span className="text-success">Free</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold border-t pt-2">
-                    <span>Total:</span>
-                    <span>${orderTotal.toFixed(2)}</span>
-                  </div>
-                </div>
+                 <div className="space-y-2 pt-4">
+                   <div className="flex justify-between text-sm">
+                     <span>Subtotal:</span>
+                     <span>{formatPrice(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0))}</span>
+                   </div>
+                   <div className="flex justify-between text-sm">
+                     <span>Shipping:</span>
+                     <span className={getShippingCost() === 0 ? "text-success" : ""}>
+                       {formatShippingCost()}
+                     </span>
+                   </div>
+                   {countryData && (
+                     <div className="flex justify-between text-xs text-muted-foreground">
+                       <span>Delivery time:</span>
+                       <span>{countryData.deliveryDays} days</span>
+                     </div>
+                   )}
+                   <div className="flex justify-between text-lg font-bold border-t pt-2">
+                     <span>Total:</span>
+                     <span>
+                       {formatPrice(
+                         cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                       )} + {formatShippingCost()}
+                     </span>
+                   </div>
+                 </div>
               </CardContent>
             </Card>
 
@@ -352,7 +405,18 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
               className="w-full btn-success"
               size="lg"
             >
-              {isSubmitting ? "Processing..." : `Place Order - $${orderTotal.toFixed(2)}`}
+              {isSubmitting ? "Processing..." : `Place Order - ${formatPrice(
+                cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) + 
+                (getShippingCost() / (countryData ? (
+                  countryData.currency === 'USD' ? 1 : 
+                  countryData.currency === 'PKR' ? 280 :
+                  countryData.currency === 'GBP' ? 0.79 :
+                  countryData.currency === 'EUR' ? 0.85 :
+                  countryData.currency === 'RUB' ? 75 :
+                  countryData.currency === 'CAD' ? 1.25 :
+                  countryData.currency === 'AUD' ? 1.35 : 1
+                ) : 1))
+              )}`}
             </Button>
           </div>
         </div>

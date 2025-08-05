@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "./ProductCard";
+import { useCountryDetection } from "@/hooks/useCountryDetection";
+import { usePricing } from "@/hooks/usePricing";
 
 export interface CartItem extends Product {
   quantity: number;
@@ -25,9 +27,21 @@ export const Cart = ({
   onRemoveItem,
   onCheckout,
 }: CartProps) => {
+  const { getCountryData } = useCountryDetection();
+  const countryData = getCountryData();
+  const { formatPrice, getShippingCost, formatShippingCost } = usePricing(countryData);
+
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingCost: number = 0; // Free shipping
-  const total = subtotal + shippingCost;
+  const shippingCost = getShippingCost();
+  const total = subtotal + (shippingCost / (countryData ? (
+    countryData.currency === 'USD' ? 1 : 
+    countryData.currency === 'PKR' ? 280 :
+    countryData.currency === 'GBP' ? 0.79 :
+    countryData.currency === 'EUR' ? 0.85 :
+    countryData.currency === 'RUB' ? 75 :
+    countryData.currency === 'CAD' ? 1.25 :
+    countryData.currency === 'AUD' ? 1.35 : 1
+  ) : 1));
 
   const handleQuantityChange = (id: number, change: number) => {
     const item = cartItems.find(item => item.id === id);
@@ -99,11 +113,11 @@ export const Cart = ({
                     </p>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-primary">
-                        ${item.price.toFixed(2)}
+                        {formatPrice(item.price)}
                       </span>
                       {item.originalPrice && (
                         <span className="text-xs text-muted-foreground line-through">
-                          ${item.originalPrice.toFixed(2)}
+                          {formatPrice(item.originalPrice)}
                         </span>
                       )}
                     </div>
@@ -143,11 +157,11 @@ export const Cart = ({
                     </Button>
                   </div>
                   
-                  <div className="text-right">
-                    <span className="font-semibold">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </span>
-                  </div>
+                   <div className="text-right">
+                     <span className="font-semibold">
+                       {formatPrice(item.price * item.quantity)}
+                     </span>
+                   </div>
                 </div>
               </div>
             ))}
@@ -159,17 +173,23 @@ export const Cart = ({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal:</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{formatPrice(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Shipping:</span>
-              <span className="text-success">
-                {shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`}
+              <span className={getShippingCost() === 0 ? "text-success" : ""}>
+                {formatShippingCost()}
               </span>
             </div>
+            {countryData && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>To {countryData.name}:</span>
+                <span>{countryData.deliveryDays} days delivery</span>
+              </div>
+            )}
             <div className="flex justify-between text-lg font-bold border-t pt-2">
               <span>Total:</span>
-              <span>${total.toFixed(2)}</span>
+              <span>{formatPrice(total)}</span>
             </div>
           </div>
           
