@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, Package, Users, BarChart3, Settings, X, Upload, Key, LogOut, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Users, BarChart3, Settings, X, Upload, Key, LogOut, Eye, EyeOff, Globe, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "./ProductCard";
+import { CountryManager, Country } from "./CountryManager";
+import { OrderManager } from "./OrderManager";
+import { DeliverySettings } from "./DeliverySettings";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -18,12 +21,17 @@ interface AdminPanelProps {
   onUpdateProducts: (products: Product[]) => void;
 }
 
-type AdminTab = "products" | "orders" | "analytics" | "settings";
+type AdminTab = "products" | "orders" | "countries" | "delivery" | "analytics" | "settings";
 
 export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: AdminPanelProps) => {
   const { toast } = useToast();
   const { adminLogout } = useAuth();
-  const [activeTab, setActiveTab] = useState<AdminTab>("products");
+  const [activeTab, setActiveTab] = useState<AdminTab>("countries");
+  const [selectedCountry, setSelectedCountry] = useState("PK");
+  const [countries, setCountries] = useState<Country[]>(() => {
+    const saved = localStorage.getItem('adminCountries');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
@@ -187,6 +195,20 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
     });
   };
 
+  const handleCountrySelect = (countryCode: string) => {
+    setSelectedCountry(countryCode);
+    setActiveTab("orders"); // Auto-switch to orders when country is selected
+  };
+
+  const handleCountriesUpdate = (newCountries: Country[]) => {
+    setCountries(newCountries);
+    localStorage.setItem('adminCountries', JSON.stringify(newCountries));
+  };
+
+  const getCurrentCountryData = () => {
+    return countries.find(c => c.code === selectedCountry) || countries[0];
+  };
+
   const TabButton = ({ tab, icon: Icon, label }: { tab: AdminTab; icon: any; label: string }) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -222,8 +244,10 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
           {/* Sidebar */}
           <div className="w-64 border-r pr-6">
             <nav className="space-y-2">
+              <TabButton tab="countries" icon={Globe} label="Countries" />
+              <TabButton tab="orders" icon={Users} label="Orders" />
+              <TabButton tab="delivery" icon={Truck} label="Delivery" />
               <TabButton tab="products" icon={Package} label="Products" />
-              <TabButton tab="orders" icon={BarChart3} label="Orders" />
               <TabButton tab="analytics" icon={BarChart3} label="Analytics" />
               <TabButton tab="settings" icon={Settings} label="Settings" />
             </nav>
@@ -231,6 +255,29 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
 
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto">
+            {activeTab === "countries" && (
+              <CountryManager
+                selectedCountry={selectedCountry}
+                onCountrySelect={handleCountrySelect}
+              />
+            )}
+
+            {activeTab === "orders" && (
+              <OrderManager
+                selectedCountry={selectedCountry}
+                countryCurrency={getCurrentCountryData()?.currency || 'PKR'}
+                currencySymbol={getCurrentCountryData()?.currencySymbol || '₨'}
+              />
+            )}
+
+            {activeTab === "delivery" && (
+              <DeliverySettings
+                countries={countries}
+                selectedCountry={selectedCountry}
+                onCountriesUpdate={handleCountriesUpdate}
+              />
+            )}
+
             {activeTab === "products" && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -296,22 +343,6 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
               </div>
             )}
 
-            {activeTab === "orders" && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold">Order Management</h2>
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center py-12">
-                      <BarChart3 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
-                      <p className="text-muted-foreground">
-                        Orders will appear here once customers start placing them.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
 
             {activeTab === "analytics" && (
               <div className="space-y-6">
