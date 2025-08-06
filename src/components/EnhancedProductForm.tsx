@@ -128,13 +128,15 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
   };
 
   const updateCountryPricing = (countryCode: string, field: keyof CountryPricing, value: any) => {
-    setCountryPricing(prev => 
-      prev.map(pricing => 
+    setCountryPricing(prev => {
+      const updated = prev.map(pricing => 
         pricing.countryCode === countryCode 
           ? { ...pricing, [field]: value }
           : pricing
-      )
-    );
+      );
+      console.log('Updated country pricing:', updated);
+      return updated;
+    });
   };
 
   const addCountry = () => {
@@ -379,7 +381,7 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                       <Checkbox
                         checked={pricing.isActive}
                         onCheckedChange={(checked) => 
-                          updateCountryPricing(pricing.countryCode, 'isActive', checked)
+                          updateCountryPricing(pricing.countryCode, 'isActive', !!checked)
                         }
                       />
                     </td>
@@ -393,12 +395,14 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.originalPrice}
+                          value={pricing.originalPrice || ''}
                           onChange={(e) => 
                             updateCountryPricing(pricing.countryCode, 'originalPrice', parseFloat(e.target.value) || 0)
                           }
                           className="w-20 text-sm"
                           step="0.01"
+                          min="0"
+                          placeholder="0.00"
                         />
                       </div>
                     </td>
@@ -407,12 +411,14 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.price}
+                          value={pricing.price || ''}
                           onChange={(e) => 
                             updateCountryPricing(pricing.countryCode, 'price', parseFloat(e.target.value) || 0)
                           }
                           className="w-20 text-sm"
                           step="0.01"
+                          min="0"
+                          placeholder="0.00"
                         />
                       </div>
                     </td>
@@ -421,21 +427,27 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.shippingCharges}
+                          value={pricing.shippingCharges || ''}
                           onChange={(e) => 
                             updateCountryPricing(pricing.countryCode, 'shippingCharges', parseFloat(e.target.value) || 0)
                           }
                           className="w-20 text-sm"
                           step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          disabled={pricing.isFreeShipping}
                         />
                       </div>
                     </td>
                     <td className="border border-border p-3">
                       <Checkbox
                         checked={pricing.isFreeShipping}
-                        onCheckedChange={(checked) => 
-                          updateCountryPricing(pricing.countryCode, 'isFreeShipping', checked)
-                        }
+                        onCheckedChange={(checked) => {
+                          updateCountryPricing(pricing.countryCode, 'isFreeShipping', !!checked);
+                          if (checked) {
+                            updateCountryPricing(pricing.countryCode, 'shippingCharges', 0);
+                          }
+                        }}
                       />
                     </td>
                   </tr>
