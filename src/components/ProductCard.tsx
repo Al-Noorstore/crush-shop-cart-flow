@@ -3,19 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
 import { usePricing } from "@/hooks/usePricing";
-
-export interface Product {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  category: string;
-  rating: number;
-  reviews: number;
-  isOnSale?: boolean;
-  isBestSeller?: boolean;
-}
+import { Product } from "@/types/Product";
 
 interface ProductCardProps {
   product: Product;
@@ -28,8 +16,18 @@ export const ProductCard = ({ product, onQuickView, onAddToCart }: ProductCardPr
   const countryData = getCountryData();
   const { formatPrice } = usePricing(countryData);
   
-  const discountPercentage = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  // Get pricing for current country
+  const countryPricing = product.countryPricing?.find(cp => 
+    cp.countryCode === countryData?.code && cp.isActive
+  );
+  
+  // If no country-specific pricing, use legacy pricing
+  const currentPrice = countryPricing?.price || product.price;
+  const currentOriginalPrice = countryPricing?.originalPrice || product.originalPrice;
+  const isFreeShipping = countryPricing?.isFreeShipping || false;
+  
+  const discountPercentage = currentOriginalPrice && currentOriginalPrice > currentPrice
+    ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
     : 0;
 
   return (
@@ -117,14 +115,21 @@ export const ProductCard = ({ product, onQuickView, onAddToCart }: ProductCardPr
         </div>
 
         {/* Price */}
-        <div className="flex items-center gap-2">
-          <span className="price-text">
-            {formatPrice(product.price)}
-          </span>
-          {product.originalPrice && (
-            <span className="original-price">
-              {formatPrice(product.originalPrice)}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="price-text">
+              {formatPrice(currentPrice)}
             </span>
+            {currentOriginalPrice && currentOriginalPrice > currentPrice && (
+              <span className="original-price">
+                {formatPrice(currentOriginalPrice)}
+              </span>
+            )}
+          </div>
+          {isFreeShipping && (
+            <Badge variant="outline" className="text-xs w-fit">
+              Free Shipping
+            </Badge>
           )}
         </div>
 

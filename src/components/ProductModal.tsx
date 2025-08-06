@@ -2,7 +2,7 @@ import { X, Star, ShoppingCart, CreditCard, Heart, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Product } from "./ProductCard";
+import { Product } from "@/types/Product";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
 import { usePricing } from "@/hooks/usePricing";
 

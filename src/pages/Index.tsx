@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
-import { ProductCard, Product } from "@/components/ProductCard";
+import { ProductCard } from "@/components/ProductCard";
+import { Product } from "@/types/Product";
 import { ProductModal } from "@/components/ProductModal";
 import { Cart, CartItem } from "@/components/Cart";
 import { CheckoutForm } from "@/components/CheckoutForm";
@@ -12,10 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Filter, SortAsc, Grid, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useCountryDetection } from "@/hooks/useCountryDetection";
 
 const Index = () => {
   const { toast } = useToast();
   const { isAdminLoggedIn, setIsAdminLoggedIn, setCurrentCustomer } = useAuth();
+  const { getCountryData } = useCountryDetection();
   
   // Sample product data
   const [products, setProducts] = useState<Product[]>([
@@ -136,7 +139,14 @@ const Index = () => {
     .filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      
+      // Country availability check
+      const currentCountry = getCountryData();
+      const isAvailableInCountry = currentCountry 
+        ? product.countryPricing?.some(cp => cp.countryCode === currentCountry.code && cp.isActive) 
+        : true; // Show all products if no country detected (fallback)
+      
+      return matchesSearch && matchesCategory && isAvailableInCountry;
     })
     .sort((a, b) => {
       switch (sortBy) {

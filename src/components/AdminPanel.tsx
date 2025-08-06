@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Product } from "./ProductCard";
+import { Product } from "@/types/Product";
 import { CountryManager, Country } from "./CountryManager";
 import { OrderManager } from "./OrderManager";
 import { DeliverySettings } from "./DeliverySettings";
+import { EnhancedProductForm } from "./EnhancedProductForm";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -45,47 +46,14 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
     new: false,
     confirm: false
   });
-  const [productForm, setProductForm] = useState({
-    name: "",
-    price: "",
-    originalPrice: "",
-    image: "",
-    category: "",
-    rating: "4.5",
-    reviews: "0",
-    isOnSale: false,
-    isBestSeller: false
-  });
 
   const handleAddProduct = () => {
     setEditingProduct(null);
-    setProductForm({
-      name: "",
-      price: "",
-      originalPrice: "",
-      image: "",
-      category: "",
-      rating: "4.5",
-      reviews: "0",
-      isOnSale: false,
-      isBestSeller: false
-    });
     setIsProductModalOpen(true);
   };
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
-    setProductForm({
-      name: product.name,
-      price: product.price.toString(),
-      originalPrice: product.originalPrice?.toString() || "",
-      image: product.image,
-      category: product.category,
-      rating: product.rating.toString(),
-      reviews: product.reviews.toString(),
-      isOnSale: product.isOnSale || false,
-      isBestSeller: product.isBestSeller || false
-    });
     setIsProductModalOpen(true);
   };
 
@@ -98,44 +66,6 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
     });
   };
 
-  const handleSaveProduct = () => {
-    if (!productForm.name || !productForm.price || !productForm.category) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const newProduct: Product = {
-      id: editingProduct?.id || Date.now(),
-      name: productForm.name,
-      price: parseFloat(productForm.price),
-      originalPrice: productForm.originalPrice ? parseFloat(productForm.originalPrice) : undefined,
-      image: productForm.image || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop",
-      category: productForm.category,
-      rating: parseFloat(productForm.rating),
-      reviews: parseInt(productForm.reviews),
-      isOnSale: productForm.isOnSale,
-      isBestSeller: productForm.isBestSeller
-    };
-
-    let updatedProducts;
-    if (editingProduct) {
-      updatedProducts = products.map(p => p.id === editingProduct.id ? newProduct : p);
-    } else {
-      updatedProducts = [...products, newProduct];
-    }
-
-    onUpdateProducts(updatedProducts);
-    setIsProductModalOpen(false);
-    
-    toast({
-      title: editingProduct ? "Product Updated" : "Product Added",
-      description: `${newProduct.name} has been ${editingProduct ? "updated" : "added to"} the catalog.`,
-    });
-  };
 
   const handlePasswordChange = () => {
     const currentAdminPassword = localStorage.getItem('adminPassword') || '548413';
@@ -435,122 +365,31 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
 
         {/* Product Modal */}
         <Dialog open={isProductModalOpen} onOpenChange={setIsProductModalOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>
                 {editingProduct ? "Edit Product" : "Add New Product"}
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Product Name *</Label>
-                  <Input
-                    value={productForm.name}
-                    onChange={(e) => setProductForm({...productForm, name: e.target.value})}
-                    placeholder="Enter product name"
-                    className="form-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Category *</Label>
-                  <Input
-                    value={productForm.category}
-                    onChange={(e) => setProductForm({...productForm, category: e.target.value})}
-                    placeholder="e.g., Electronics, Clothing"
-                    className="form-input"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Price *</Label>
-                  <Input
-                    type="number"
-                    value={productForm.price}
-                    onChange={(e) => setProductForm({...productForm, price: e.target.value})}
-                    placeholder="0.00"
-                    className="form-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Original Price (if on sale)</Label>
-                  <Input
-                    type="number"
-                    value={productForm.originalPrice}
-                    onChange={(e) => setProductForm({...productForm, originalPrice: e.target.value})}
-                    placeholder="0.00"
-                    className="form-input"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Image URL</Label>
-                <Input
-                  value={productForm.image}
-                  onChange={(e) => setProductForm({...productForm, image: e.target.value})}
-                  placeholder="https://example.com/image.jpg"
-                  className="form-input"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Rating</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="5"
-                    step="0.1"
-                    value={productForm.rating}
-                    onChange={(e) => setProductForm({...productForm, rating: e.target.value})}
-                    className="form-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Reviews Count</Label>
-                  <Input
-                    type="number"
-                    value={productForm.reviews}
-                    onChange={(e) => setProductForm({...productForm, reviews: e.target.value})}
-                    className="form-input"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={productForm.isOnSale}
-                    onChange={(e) => setProductForm({...productForm, isOnSale: e.target.checked})}
-                    className="rounded border-gray-300"
-                  />
-                  <span>On Sale</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={productForm.isBestSeller}
-                    onChange={(e) => setProductForm({...productForm, isBestSeller: e.target.checked})}
-                    className="rounded border-gray-300"
-                  />
-                  <span>Best Seller</span>
-                </label>
-              </div>
-              
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleSaveProduct} className="btn-primary">
-                  {editingProduct ? "Update Product" : "Add Product"}
-                </Button>
-                <Button onClick={() => setIsProductModalOpen(false)} variant="outline">
-                  Cancel
-                </Button>
-              </div>
-            </div>
+            <EnhancedProductForm
+              product={editingProduct}
+              onSave={(product) => {
+                let updatedProducts;
+                if (editingProduct) {
+                  updatedProducts = products.map(p => p.id === editingProduct.id ? product : p);
+                } else {
+                  updatedProducts = [...products, product];
+                }
+                onUpdateProducts(updatedProducts);
+                setIsProductModalOpen(false);
+                toast({
+                  title: editingProduct ? "Product Updated" : "Product Added",
+                  description: `${product.name} has been ${editingProduct ? "updated" : "added to"} the catalog.`,
+                });
+              }}
+              onCancel={() => setIsProductModalOpen(false)}
+            />
           </DialogContent>
         </Dialog>
 

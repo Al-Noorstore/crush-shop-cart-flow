@@ -2,7 +2,7 @@ import { Minus, Plus, Trash2, X, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Product } from "./ProductCard";
+import { Product } from "@/types/Product";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
 import { usePricing } from "@/hooks/usePricing";
 
