@@ -380,9 +380,10 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                     <td className="border border-border p-3">
                       <Checkbox
                         checked={pricing.isActive}
-                        onCheckedChange={(checked) => 
-                          updateCountryPricing(pricing.countryCode, 'isActive', !!checked)
-                        }
+                        onCheckedChange={(checked) => {
+                          console.log('Checkbox changed for', pricing.countryCode, 'to:', checked);
+                          updateCountryPricing(pricing.countryCode, 'isActive', checked === true);
+                        }}
                       />
                     </td>
                     <td className="border border-border p-3">
@@ -395,10 +396,12 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.originalPrice?.toString() || '0'}
-                          onChange={(e) => 
-                            updateCountryPricing(pricing.countryCode, 'originalPrice', parseFloat(e.target.value) || 0)
-                          }
+                          value={pricing.originalPrice || 0}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            console.log('Original price changed for', pricing.countryCode, 'to:', value);
+                            updateCountryPricing(pricing.countryCode, 'originalPrice', value || 0);
+                          }}
                           className="w-20 text-sm"
                           step="0.01"
                           min="0"
@@ -411,10 +414,12 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.price?.toString() || '0'}
-                          onChange={(e) => 
-                            updateCountryPricing(pricing.countryCode, 'price', parseFloat(e.target.value) || 0)
-                          }
+                          value={pricing.price || 0}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            console.log('Price changed for', pricing.countryCode, 'to:', value);
+                            updateCountryPricing(pricing.countryCode, 'price', value || 0);
+                          }}
                           className="w-20 text-sm"
                           step="0.01"
                           min="0"
@@ -427,10 +432,16 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.shippingCharges?.toString() || '0'}
-                          onChange={(e) => 
-                            updateCountryPricing(pricing.countryCode, 'shippingCharges', parseFloat(e.target.value) || 0)
-                          }
+                          value={pricing.shippingCharges || 0}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            console.log('Shipping charges changed for', pricing.countryCode, 'to:', value);
+                            // If user enters shipping charges, turn off free shipping
+                            if (value > 0) {
+                              updateCountryPricing(pricing.countryCode, 'isFreeShipping', false);
+                            }
+                            updateCountryPricing(pricing.countryCode, 'shippingCharges', value || 0);
+                          }}
                           className="w-20 text-sm"
                           step="0.01"
                           min="0"
@@ -443,7 +454,8 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                       <Checkbox
                         checked={pricing.isFreeShipping}
                         onCheckedChange={(checked) => {
-                          updateCountryPricing(pricing.countryCode, 'isFreeShipping', !!checked);
+                          console.log('Free shipping changed for', pricing.countryCode, 'to:', checked);
+                          updateCountryPricing(pricing.countryCode, 'isFreeShipping', checked === true);
                           if (checked) {
                             updateCountryPricing(pricing.countryCode, 'shippingCharges', 0);
                           }
