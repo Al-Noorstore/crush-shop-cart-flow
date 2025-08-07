@@ -142,9 +142,10 @@ const Index = () => {
       
       // Country availability check
       const currentCountry = getCountryData();
-      const isAvailableInCountry = currentCountry 
-        ? product.countryPricing?.some(cp => cp.countryCode === currentCountry.code && cp.isActive) 
-        : true; // Show all products if no country detected (fallback)
+      // If product has country pricing, check availability; otherwise show all products (legacy compatibility)
+      const isAvailableInCountry = currentCountry && product.countryPricing?.length > 0
+        ? product.countryPricing.some(cp => cp.countryCode === currentCountry.code && cp.isActive) 
+        : true; // Show all products if no country detected or no country pricing configured
       
       return matchesSearch && matchesCategory && isAvailableInCountry;
     })
