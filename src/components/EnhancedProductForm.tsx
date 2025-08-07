@@ -395,7 +395,7 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.originalPrice || ''}
+                          value={pricing.originalPrice?.toString() || '0'}
                           onChange={(e) => 
                             updateCountryPricing(pricing.countryCode, 'originalPrice', parseFloat(e.target.value) || 0)
                           }
@@ -411,7 +411,7 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.price || ''}
+                          value={pricing.price?.toString() || '0'}
                           onChange={(e) => 
                             updateCountryPricing(pricing.countryCode, 'price', parseFloat(e.target.value) || 0)
                           }
@@ -427,7 +427,7 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
                           type="number"
-                          value={pricing.shippingCharges || ''}
+                          value={pricing.shippingCharges?.toString() || '0'}
                           onChange={(e) => 
                             updateCountryPricing(pricing.countryCode, 'shippingCharges', parseFloat(e.target.value) || 0)
                           }
