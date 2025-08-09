@@ -47,13 +47,23 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
   } = useCountryDetection();
   
   const countryData = getCountryData();
-  const { 
-    convertPrice, 
-    formatPrice, 
-    getShippingCost, 
-    formatShippingCost, 
-    getCurrencySymbol 
-  } = usePricing(countryData);
+  const currencySymbol = countryData?.currencySymbol || '$';
+  const selectedCode = countryData?.code || '';
+  const getPricing = (p: CartItem) => p.countryPricing?.find(cp => cp.countryCode === selectedCode);
+  const getItemPrice = (p: CartItem) => {
+    const cp = getPricing(p);
+    return cp ? cp.price : p.price;
+  };
+  const getItemShipping = (p: CartItem) => {
+    const cp = getPricing(p);
+    if (!cp) return 0;
+    return cp.isFreeShipping ? 0 : (cp.shippingCharges || 0);
+  };
+  const formatLocal = (amount: number) => `${currencySymbol}${amount.toFixed(2)}`;
+
+  const subtotal = cartItems.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
+  const shippingTotal = cartItems.reduce((sum, item) => sum + getItemShipping(item) * item.quantity, 0);
+  const total = subtotal + shippingTotal;
   
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: "",
@@ -93,18 +103,16 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
       // Simulate form submission
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Calculate total with shipping and currency conversion
-      const convertedSubtotal = cartItems.reduce((sum, item) => 
-        sum + convertPrice(item.price) * item.quantity, 0
-      );
-      const shippingCost = getShippingCost();
-      const finalTotal = convertedSubtotal + shippingCost;
+      // Calculate totals (country-specific product pricing and shipping)
+      const subtotalCalc = cartItems.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
+      const shippingCost = cartItems.reduce((sum, item) => sum + getItemShipping(item) * item.quantity, 0);
+      const finalTotal = subtotalCalc + shippingCost;
 
       // In a real app, you would send this data to your backend
       const orderData = {
         items: cartItems,
         shippingInfo: { ...shippingInfo, country: selectedCountry },
-        subtotal: convertedSubtotal,
+        subtotal: subtotalCalc,
         shippingCost,
         total: finalTotal,
         currency: countryData?.currency || 'USD',
@@ -326,7 +334,7 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
                         </p>
                       </div>
                        <span className="font-semibold">
-                         {formatPrice(item.price * item.quantity)}
+                         {formatLocal(getItemPrice(item) * item.quantity)}
                        </span>
                     </div>
                   ))}
@@ -335,12 +343,12 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
                  <div className="space-y-2 pt-4">
                    <div className="flex justify-between text-sm">
                      <span>Subtotal:</span>
-                     <span>{formatPrice(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0))}</span>
+                     <span>{formatLocal(subtotal)}</span>
                    </div>
                    <div className="flex justify-between text-sm">
                      <span>Shipping:</span>
-                     <span className={getShippingCost() === 0 ? "text-success" : ""}>
-                       {formatShippingCost()}
+                     <span className={shippingTotal === 0 ? "text-success" : ""}>
+                       {shippingTotal === 0 ? 'Free' : formatLocal(shippingTotal)}
                      </span>
                    </div>
                    {countryData && (
@@ -351,11 +359,7 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
                    )}
                    <div className="flex justify-between text-lg font-bold border-t pt-2">
                      <span>Total:</span>
-                     <span>
-                       {formatPrice(
-                         cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-                       )} + {formatShippingCost()}
-                     </span>
+                     <span>{formatLocal(total)}</span>
                    </div>
                  </div>
               </CardContent>
@@ -405,18 +409,7 @@ export const CheckoutForm = ({ isOpen, onClose, cartItems, orderTotal }: Checkou
               className="w-full btn-success"
               size="lg"
             >
-              {isSubmitting ? "Processing..." : `Place Order - ${formatPrice(
-                cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) + 
-                (getShippingCost() / (countryData ? (
-                  countryData.currency === 'USD' ? 1 : 
-                  countryData.currency === 'PKR' ? 280 :
-                  countryData.currency === 'GBP' ? 0.79 :
-                  countryData.currency === 'EUR' ? 0.85 :
-                  countryData.currency === 'RUB' ? 75 :
-                  countryData.currency === 'CAD' ? 1.25 :
-                  countryData.currency === 'AUD' ? 1.35 : 1
-                ) : 1))
-              )}`}
+              {isSubmitting ? "Processing..." : `Place Order - ${formatLocal(total)}`}
             </Button>
           </div>
         </div>

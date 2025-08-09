@@ -65,7 +65,20 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
         setVideos(vids.length > 0 ? vids : [{ id: "vid1", url: "", type: "video" }]);
       }
       
-      setCountryPricing(product.countryPricing || []);
+      if (product.countryPricing && product.countryPricing.length > 0) {
+        setCountryPricing(product.countryPricing);
+      } else {
+        // If no country pricing exists yet, initialize with active countries
+        const initialPricing = countries.map(country => ({
+          countryCode: country.code,
+          isActive: true,
+          originalPrice: 0,
+          price: 0,
+          shippingCharges: country.deliveryCharges,
+          isFreeShipping: false
+        }));
+        setCountryPricing(initialPricing);
+      }
     } else {
       // Initialize with all active countries for new product
       const initialPricing = countries.map(country => ({

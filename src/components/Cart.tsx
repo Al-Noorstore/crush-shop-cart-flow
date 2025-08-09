@@ -29,19 +29,28 @@ export const Cart = ({
 }: CartProps) => {
   const { getCountryData } = useCountryDetection();
   const countryData = getCountryData();
-  const { formatPrice, getShippingCost, formatShippingCost } = usePricing(countryData);
+  const currencySymbol = countryData?.currencySymbol || '$';
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingCost = getShippingCost();
-  const total = subtotal + (shippingCost / (countryData ? (
-    countryData.currency === 'USD' ? 1 : 
-    countryData.currency === 'PKR' ? 280 :
-    countryData.currency === 'GBP' ? 0.79 :
-    countryData.currency === 'EUR' ? 0.85 :
-    countryData.currency === 'RUB' ? 75 :
-    countryData.currency === 'CAD' ? 1.25 :
-    countryData.currency === 'AUD' ? 1.35 : 1
-  ) : 1));
+  const selectedCode = countryData?.code || '';
+  const getPricing = (item: Product) => item.countryPricing?.find(cp => cp.countryCode === selectedCode);
+  const getItemPrice = (item: Product) => {
+    const cp = getPricing(item);
+    return cp ? cp.price : item.price;
+  };
+  const getItemOriginalPrice = (item: Product) => {
+    const cp = getPricing(item);
+    return cp && cp.originalPrice > 0 ? cp.originalPrice : item.originalPrice;
+  };
+  const getItemShipping = (item: Product) => {
+    const cp = getPricing(item);
+    if (cp) return cp.isFreeShipping ? 0 : (cp.shippingCharges || 0);
+    return 0;
+  };
+  const formatLocal = (amount: number) => `${currencySymbol}${amount.toFixed(2)}`;
+
+  const subtotal = cartItems.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
+  const shippingTotal = cartItems.reduce((sum, item) => sum + getItemShipping(item) * item.quantity, 0);
+  const total = subtotal + shippingTotal;
 
   const handleQuantityChange = (id: number, change: number) => {
     const item = cartItems.find(item => item.id === id);
@@ -111,16 +120,16 @@ export const Cart = ({
                     <p className="text-xs text-muted-foreground">
                       {item.category}
                     </p>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-primary">
-                        {formatPrice(item.price)}
-                      </span>
-                      {item.originalPrice && (
-                        <span className="text-xs text-muted-foreground line-through">
-                          {formatPrice(item.originalPrice)}
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-primary">
+                          {formatLocal(getItemPrice(item))}
                         </span>
-                      )}
-                    </div>
+                        {getItemOriginalPrice(item) && (
+                          <span className="text-xs text-muted-foreground line-through">
+                            {formatLocal(getItemOriginalPrice(item) as number)}
+                          </span>
+                        )}
+                      </div>
                   </div>
                   
                   <Button
@@ -159,7 +168,7 @@ export const Cart = ({
                   
                    <div className="text-right">
                      <span className="font-semibold">
-                       {formatPrice(item.price * item.quantity)}
+                       {formatLocal(getItemPrice(item) * item.quantity)}
                      </span>
                    </div>
                 </div>
@@ -173,12 +182,12 @@ export const Cart = ({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal:</span>
-              <span>{formatPrice(subtotal)}</span>
+              <span>{formatLocal(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Shipping:</span>
-              <span className={getShippingCost() === 0 ? "text-success" : ""}>
-                {formatShippingCost()}
+              <span className={shippingTotal === 0 ? "text-success" : ""}>
+                {shippingTotal === 0 ? 'Free' : formatLocal(shippingTotal)}
               </span>
             </div>
             {countryData && (
@@ -189,7 +198,7 @@ export const Cart = ({
             )}
             <div className="flex justify-between text-lg font-bold border-t pt-2">
               <span>Total:</span>
-              <span>{formatPrice(total)}</span>
+              <span>{formatLocal(total)}</span>
             </div>
           </div>
           
