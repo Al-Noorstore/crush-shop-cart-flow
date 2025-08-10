@@ -144,6 +144,8 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
       <span>{label}</span>
     </button>
   );
+  
+  const categories = Array.from(new Set(products.map(p => p.category))).filter(Boolean);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -364,6 +366,7 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
             
             <EnhancedProductForm
               product={editingProduct}
+              categories={categories}
               onSave={(product) => {
                 let updatedProducts;
                 if (editingProduct) {

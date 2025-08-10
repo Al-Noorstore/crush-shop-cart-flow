@@ -15,9 +15,10 @@ interface EnhancedProductFormProps {
   product?: Product | null;
   onSave: (product: Product) => void;
   onCancel: () => void;
+  categories?: string[];
 }
 
-export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProductFormProps) => {
+export const EnhancedProductForm = ({ product, onSave, onCancel, categories }: EnhancedProductFormProps) => {
   const { toast } = useToast();
   const { countries } = useCountryDetection();
   
@@ -35,6 +36,7 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
   const [productForm, setProductForm] = useState({
     name: "",
     category: "",
+    newCategory: "",
     description: "",
     rating: "4.5",
     reviews: "0",
@@ -60,6 +62,7 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
       setProductForm({
         name: product.name,
         category: product.category,
+        newCategory: "",
         description: product.description || "",
         rating: product.rating.toString(),
         reviews: product.reviews.toString(),
@@ -188,10 +191,11 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
   };
 
   const handleSave = () => {
-    if (!productForm.name || !productForm.category) {
+    const finalCategory = productForm.category === "__new__" ? productForm.newCategory.trim() : productForm.category.trim();
+    if (!productForm.name.trim() || !finalCategory) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields.",
+        description: "Please fill in product name and category.",
         variant: "destructive"
       });
       return;
@@ -216,11 +220,11 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
 
     const newProduct: Product = {
       id: product?.id || Date.now(),
-      name: productForm.name,
+      name: productForm.name.trim(),
       price: primaryPricing.price,
       originalPrice: primaryPricing.originalPrice > 0 ? primaryPricing.originalPrice : undefined,
       image: primaryImage,
-      category: productForm.category,
+      category: finalCategory,
       rating: parseFloat(productForm.rating),
       reviews: parseInt(productForm.reviews),
       isOnSale: productForm.isOnSale,
@@ -263,12 +267,31 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
             </div>
             <div className="space-y-2">
               <Label>Category *</Label>
-              <Input
+              <Select
                 value={productForm.category}
-                onChange={(e) => setProductForm({...productForm, category: e.target.value})}
-                placeholder="e.g., Electronics, Clothing"
-                className="form-input"
-              />
+                onValueChange={(value) => setProductForm({ ...productForm, category: value })}
+              >
+                <SelectTrigger className="form-input">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(categories || []).map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                  <SelectItem value="__new__">Add New Category</SelectItem>
+                </SelectContent>
+              </Select>
+              {productForm.category === "__new__" && (
+                <div className="space-y-1">
+                  <Label>If New Category</Label>
+                  <Input
+                    value={productForm.newCategory}
+                    onChange={(e) => setProductForm({ ...productForm, newCategory: e.target.value })}
+                    placeholder="Enter new category"
+                    className="form-input"
+                  />
+                </div>
+              )}
             </div>
           </div>
           
