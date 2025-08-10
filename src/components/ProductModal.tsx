@@ -27,8 +27,16 @@ export const ProductModal = ({
   const countryData = getCountryData();
   const { formatPrice, formatShippingCost } = usePricing(countryData);
 
-  const discountPercentage = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  // Use per-country pricing if available and active
+  const countryPricing = product.countryPricing?.find(
+    (cp) => cp.countryCode === countryData?.code && cp.isActive
+  );
+  const currentPrice = countryPricing?.price ?? product.price;
+  const currentOriginalPrice = countryPricing?.originalPrice ?? product.originalPrice;
+  const isFreeShipping = countryPricing?.isFreeShipping ?? false;
+
+  const discountPercentage = currentOriginalPrice
+    ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
     : 0;
 
   const handleAddToCart = () => {
@@ -112,17 +120,17 @@ export const ProductModal = ({
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <span className="text-4xl font-bold text-primary">
-                  {formatPrice(product.price)}
+                  {formatPrice(currentPrice)}
                 </span>
-                {product.originalPrice && (
+                {currentOriginalPrice && (
                   <span className="text-xl text-muted-foreground line-through">
-                    {formatPrice(product.originalPrice)}
+                    {formatPrice(currentOriginalPrice)}
                   </span>
                 )}
               </div>
-              {product.isOnSale && product.originalPrice && (
+              {currentOriginalPrice && currentOriginalPrice > currentPrice && (
                 <p className="text-success font-semibold">
-                  You save {formatPrice(product.originalPrice - product.price)}!
+                  You save {formatPrice(currentOriginalPrice - currentPrice)}!
                 </p>
               )}
               {countryData && (
@@ -200,7 +208,13 @@ export const ProductModal = ({
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping to {countryData?.name || 'your location'}:</span>
-                  <span className="font-medium">{formatShippingCost()}</span>
+                  <span className="font-medium">
+                    {countryPricing
+                      ? (isFreeShipping
+                          ? 'Free'
+                          : `${countryData?.currencySymbol || '$'}${(countryPricing.shippingCharges || 0).toFixed(2)}`)
+                      : formatShippingCost()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Delivery:</span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
 import { Product, CountryPricing, ProductMedia } from "@/types/Product";
 import { useToast } from "@/hooks/use-toast";
-
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 interface EnhancedProductFormProps {
   product?: Product | null;
   onSave: (product: Product) => void;
@@ -20,6 +20,17 @@ interface EnhancedProductFormProps {
 export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProductFormProps) => {
   const { toast } = useToast();
   const { countries } = useCountryDetection();
+  
+  // Prefer admin-managed countries list if present; fallback to active countries from hook
+  const allCountries = useMemo(() => {
+    try {
+      const saved = localStorage.getItem('adminCountries');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) && parsed.length ? parsed : countries;
+    } catch {
+      return countries;
+    }
+  }, [countries]);
   
   const [productForm, setProductForm] = useState({
     name: "",
@@ -153,16 +164,27 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
   };
 
   const addCountry = () => {
-    // Add a new country slot (admin can select which country to add)
-    const newCountryCode = 'NEW';
-    setCountryPricing([...countryPricing, {
-      countryCode: newCountryCode,
-      isActive: false,
-      originalPrice: 0,
-      price: 0,
-      shippingCharges: 0,
-      isFreeShipping: false
-    }]);
+    // Add the first country that's not already in the pricing list
+    const unused = allCountries.filter(c => !countryPricing.some(cp => cp.countryCode === c.code));
+    if (unused.length === 0) {
+      toast({
+        title: "All countries added",
+        description: "You have already added all available countries.",
+      });
+      return;
+    }
+    const next = unused[0];
+    setCountryPricing([
+      ...countryPricing,
+      {
+        countryCode: next.code,
+        isActive: true,
+        originalPrice: 0,
+        price: 0,
+        shippingCharges: next.deliveryCharges || 0,
+        isFreeShipping: false,
+      },
+    ]);
   };
 
   const handleSave = () => {
@@ -213,15 +235,14 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
   };
 
   const getCountryName = (countryCode: string) => {
-    const country = countries.find(c => c.code === countryCode);
+    const country = allCountries.find((c: any) => c.code === countryCode);
     return country ? `${country.flag} ${country.name}` : countryCode;
   };
 
   const getCurrencySymbol = (countryCode: string) => {
-    const country = countries.find(c => c.code === countryCode);
+    const country = allCountries.find((c: any) => c.code === countryCode);
     return country?.currencySymbol || '$';
   };
-
   return (
     <div className="space-y-6 max-h-[80vh] overflow-y-auto">
       {/* Basic Product Information */}
@@ -400,9 +421,40 @@ export const EnhancedProductForm = ({ product, onSave, onCancel }: EnhancedProdu
                       />
                     </td>
                     <td className="border border-border p-3">
-                      <Badge variant="outline" className="whitespace-nowrap">
-                        {getCountryName(pricing.countryCode)}
-                      </Badge>
+                      <Select
+                        value={pricing.countryCode}
+                        onValueChange={(value) => {
+                          if (value === pricing.countryCode) return;
+                          if (countryPricing.some(cp => cp.countryCode === value)) {
+                            toast({
+                              title: "Country already added",
+                              description: "This country is already in the list.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          setCountryPricing(prev => prev.map(cp =>
+                            cp.countryCode === pricing.countryCode
+                              ? { ...cp, countryCode: value }
+                              : cp
+                          ));
+                        }}
+                      >
+                        <SelectTrigger className="w-56">
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allCountries.map((c: any) => (
+                            <SelectItem
+                              key={c.code}
+                              value={c.code}
+                              disabled={countryPricing.some(cp => cp.countryCode === c.code) && c.code !== pricing.countryCode}
+                            >
+                              {c.flag} {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="border border-border p-3">
                       <div className="flex items-center gap-1">
