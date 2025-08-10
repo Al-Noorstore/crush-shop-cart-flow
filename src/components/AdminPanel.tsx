@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, Package, Users, BarChart3, Settings, X, Upload, Key, LogOut, Eye, EyeOff, Globe, Truck } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Users, BarChart3, Settings, X, Upload, Key, LogOut, Eye, EyeOff, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/Product";
-import { CountryManager, Country } from "./CountryManager";
+import type { Country } from "./CountryManager";
 import { OrderManager } from "./OrderManager";
 import { DeliverySettings } from "./DeliverySettings";
 import { EnhancedProductForm } from "./EnhancedProductForm";
@@ -22,12 +22,12 @@ interface AdminPanelProps {
   onUpdateProducts: (products: Product[]) => void;
 }
 
-type AdminTab = "products" | "orders" | "countries" | "delivery" | "analytics" | "settings";
+type AdminTab = "products" | "orders" | "delivery" | "analytics" | "settings";
 
 export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: AdminPanelProps) => {
   const { toast } = useToast();
   const { adminLogout } = useAuth();
-  const [activeTab, setActiveTab] = useState<AdminTab>("countries");
+  const [activeTab, setActiveTab] = useState<AdminTab>("products");
   const [selectedCountry, setSelectedCountry] = useState("PK");
   const [countries, setCountries] = useState<Country[]>(() => {
     const saved = localStorage.getItem('adminCountries');
@@ -125,10 +125,6 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
     });
   };
 
-  const handleCountrySelect = (countryCode: string) => {
-    setSelectedCountry(countryCode);
-    setActiveTab("orders"); // Auto-switch to orders when country is selected
-  };
 
   const handleCountriesUpdate = (newCountries: Country[]) => {
     setCountries(newCountries);
@@ -174,7 +170,7 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
           {/* Sidebar */}
           <div className="w-64 border-r pr-6">
             <nav className="space-y-2">
-              <TabButton tab="countries" icon={Globe} label="Countries" />
+              
               <TabButton tab="orders" icon={Users} label="Orders" />
               <TabButton tab="delivery" icon={Truck} label="Delivery" />
               <TabButton tab="products" icon={Package} label="Products" />
@@ -185,12 +181,6 @@ export const AdminPanel = ({ isOpen, onClose, products, onUpdateProducts }: Admi
 
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto">
-            {activeTab === "countries" && (
-              <CountryManager
-                selectedCountry={selectedCountry}
-                onCountrySelect={handleCountrySelect}
-              />
-            )}
 
             {activeTab === "orders" && (
               <OrderManager
