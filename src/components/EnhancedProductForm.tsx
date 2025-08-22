@@ -161,7 +161,7 @@ export const EnhancedProductForm = ({ product, onSave, onCancel, categories }: E
           ? { ...pricing, [field]: value }
           : pricing
       );
-      console.log('Updated country pricing for', countryCode, field, value, ':', updated);
+      console.log('Updated country pricing for', countryCode, field, ':', value, 'Result:', updated);
       return updated;
     });
   };
