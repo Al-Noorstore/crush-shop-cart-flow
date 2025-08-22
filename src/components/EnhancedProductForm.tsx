@@ -248,151 +248,142 @@ export const EnhancedProductForm = ({ product, onSave, onCancel, categories }: E
     return country?.currencySymbol || '$';
   };
   return (
-    <div className="space-y-6 max-h-[80vh] overflow-y-auto">
-      {/* Basic Product Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Product Name *</Label>
-              <Input
-                value={productForm.name}
-                onChange={(e) => setProductForm({...productForm, name: e.target.value})}
-                placeholder="Enter product name"
-                className="form-input"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Category *</Label>
-              <Select
-                value={productForm.category}
-                onValueChange={(value) => setProductForm({ ...productForm, category: value })}
-              >
-                <SelectTrigger className="form-input">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(categories || []).map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                  <SelectItem value="__new__">Add New Category</SelectItem>
-                </SelectContent>
-              </Select>
-              {productForm.category === "__new__" && (
-                <div className="space-y-1">
-                  <Label>If New Category</Label>
-                  <Input
-                    value={productForm.newCategory}
-                    onChange={(e) => setProductForm({ ...productForm, newCategory: e.target.value })}
-                    placeholder="Enter new category"
-                    className="form-input"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-          
+    <div className="bg-background border border-border rounded-lg p-6 max-w-4xl mx-auto">
+      <div className="border-b border-border pb-4 mb-6">
+        <h2 className="text-xl font-bold text-center">Add/Edit Product</h2>
+      </div>
+      
+      <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+        {/* Product Name */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Product Description</Label>
-            <Textarea
-              value={productForm.description}
-              onChange={(e) => setProductForm({...productForm, description: e.target.value})}
-              placeholder="Detailed product description"
-              className="form-input min-h-[100px]"
+            <Label className="text-sm font-medium">Product Name:</Label>
+            <Input
+              value={productForm.name}
+              onChange={(e) => setProductForm({...productForm, name: e.target.value})}
+              placeholder="Enter product name"
+              className="w-full"
             />
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Product Media */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Media</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Images */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Product Images</Label>
-            {media.map((img, index) => (
-              <div key={img.id} className="flex gap-2 items-center">
-                <Input
-                  value={img.url}
-                  onChange={(e) => updateMedia(img.id, e.target.value, 'image')}
-                  placeholder={`Image URL ${index + 1}`}
-                  className="form-input flex-1"
-                />
-                <Button variant="outline" size="sm">
-                  <Upload className="w-4 h-4" />
-                </Button>
-                {media.length > 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeMedia(img.id, 'image')}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button variant="outline" onClick={() => addMedia('image')} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Add More Images
-            </Button>
+        {/* Product Images */}
+        <div className="space-y-4">
+          <Label className="text-sm font-medium">Product Images:</Label>
+          {media.slice(0, 4).map((img, index) => (
+            <div key={img.id} className="flex gap-2 items-center">
+              <Input
+                value={img.url}
+                onChange={(e) => updateMedia(img.id, e.target.value, 'image')}
+                placeholder={`Image URL ${index + 1}`}
+                className="flex-1"
+              />
+              <Button variant="outline" size="sm">
+                <Upload className="w-4 h-4" />
+                Upload
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => removeMedia(img.id, 'image')}
+                className="text-destructive"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </Button>
+            </div>
+          ))}
+          <Button variant="outline" onClick={() => addMedia('image')} className="w-fit">
+            <Plus className="w-4 h-4 mr-2" />
+            Add More Images
+          </Button>
+        </div>
+
+        {/* Category */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Category:</Label>
+            <Select
+              value={productForm.category}
+              onValueChange={(value) => setProductForm({ ...productForm, category: value })}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Dropdown for existing categories" />
+              </SelectTrigger>
+              <SelectContent>
+                {(categories || []).map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+                <SelectItem value="__new__">Add New Category</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
-          {/* Videos */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Product Videos</Label>
-            {videos.map((video, index) => (
-              <div key={video.id} className="flex gap-2 items-center">
-                <Input
-                  value={video.url}
-                  onChange={(e) => updateMedia(video.id, e.target.value, 'video')}
-                  placeholder={`Video URL ${index + 1}`}
-                  className="form-input flex-1"
-                />
-                <Button variant="outline" size="sm">
-                  <Upload className="w-4 h-4" />
-                </Button>
-                {videos.length > 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeMedia(video.id, 'video')}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button variant="outline" onClick={() => addMedia('video')} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Add More Videos
-            </Button>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">If New Category:</Label>
+            <Input
+              value={productForm.newCategory}
+              onChange={(e) => setProductForm({ ...productForm, newCategory: e.target.value })}
+              placeholder="Enter new category name"
+              className="w-full"
+              disabled={productForm.category !== "__new__"}
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Product Features */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Features</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        {/* Product Videos */}
+        <div className="space-y-4">
+          <Label className="text-sm font-medium">Product Videos:</Label>
+          {videos.slice(0, 2).map((video, index) => (
+            <div key={video.id} className="flex gap-2 items-center">
+              <Input
+                value={video.url}
+                onChange={(e) => updateMedia(video.id, e.target.value, 'video')}
+                placeholder={`Video URL ${index + 1}`}
+                className="flex-1"
+              />
+              <Button variant="outline" size="sm">
+                <Upload className="w-4 h-4" />
+                Upload
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => removeMedia(video.id, 'video')}
+                className="text-destructive"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </Button>
+            </div>
+          ))}
+          <Button variant="outline" onClick={() => addMedia('video')} className="w-fit">
+            <Plus className="w-4 h-4 mr-2" />
+            Add More Videos
+          </Button>
+        </div>
+
+        {/* Product Description */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Product Description:</Label>
+          <Textarea
+            value={productForm.description}
+            onChange={(e) => setProductForm({...productForm, description: e.target.value})}
+            placeholder="Enter detailed product description"
+            className="w-full min-h-[100px]"
+          />
+        </div>
+
+        {/* Product Features */}
+        <div className="space-y-4">
+          <Label className="text-sm font-medium">Product Features:</Label>
           {features.map((feature, index) => (
             <div key={index} className="flex gap-2 items-center">
-              <span className="text-sm font-medium">•</span>
+              <span className="text-sm font-medium">-</span>
               <Input
                 value={feature}
                 onChange={(e) => updateFeature(index, e.target.value)}
                 placeholder={`Feature ${index + 1}`}
-                className="form-input flex-1"
+                className="flex-1"
               />
               {features.length > 1 && (
                 <Button
@@ -406,80 +397,37 @@ export const EnhancedProductForm = ({ product, onSave, onCancel, categories }: E
               )}
             </div>
           ))}
-          <Button variant="outline" onClick={addFeature} className="w-full">
+          <Button variant="outline" onClick={addFeature} className="w-fit">
             <Plus className="w-4 h-4 mr-2" />
             Add More Features
           </Button>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Countries and Pricing */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Countries and Pricing</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-border">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="border border-border p-3 text-left">Activate</th>
-                  <th className="border border-border p-3 text-left">Country</th>
-                  <th className="border border-border p-3 text-left">Original Price</th>
-                  <th className="border border-border p-3 text-left">Price</th>
-                  <th className="border border-border p-3 text-left">Shipping Charges</th>
-                  <th className="border border-border p-3 text-left">Free Shipping</th>
-                </tr>
-              </thead>
-              <tbody>
-                {countryPricing.map((pricing) => (
-                  <tr key={pricing.countryCode}>
-                    <td className="border border-border p-3">
-                      <Checkbox
-                        checked={pricing.isActive}
-                        onCheckedChange={(checked) => {
-                          console.log('Checkbox changed for', pricing.countryCode, 'to:', checked);
-                          updateCountryPricing(pricing.countryCode, 'isActive', checked === true);
-                        }}
-                      />
-                    </td>
-                    <td className="border border-border p-3">
-                      <Select
-                        value={pricing.countryCode}
-                        onValueChange={(value) => {
-                          if (value === pricing.countryCode) return;
-                          if (countryPricing.some(cp => cp.countryCode === value)) {
-                            toast({
-                              title: "Country already added",
-                              description: "This country is already in the list.",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-                          setCountryPricing(prev => prev.map(cp =>
-                            cp.countryCode === pricing.countryCode
-                              ? { ...cp, countryCode: value }
-                              : cp
-                          ));
-                        }}
-                      >
-                        <SelectTrigger className="w-56">
-                          <SelectValue placeholder="Select country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {allCountries.map((c: any) => (
-                            <SelectItem
-                              key={c.code}
-                              value={c.code}
-                              disabled={countryPricing.some(cp => cp.countryCode === c.code) && c.code !== pricing.countryCode}
-                            >
-                              {c.flag} {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="border border-border p-3">
+        {/* Countries and Pricing */}
+        <div className="space-y-4">
+          <Label className="text-sm font-medium">Countries:</Label>
+          <div className="space-y-2">
+            {countryPricing.map((pricing) => (
+              <div key={pricing.countryCode} className="border border-border rounded p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={pricing.isActive}
+                      onCheckedChange={(checked) => {
+                        updateCountryPricing(pricing.countryCode, 'isActive', checked === true);
+                      }}
+                    />
+                    <span className="font-medium">{getCountryName(pricing.countryCode)}</span>
+                  </div>
+                  <Badge variant={pricing.isActive ? "default" : "secondary"}>
+                    {pricing.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+                
+                {pricing.isActive && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Original Price:</Label>
                       <div className="flex items-center gap-1">
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
@@ -487,17 +435,18 @@ export const EnhancedProductForm = ({ product, onSave, onCancel, categories }: E
                           value={pricing.originalPrice || 0}
                           onChange={(e) => {
                             const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                            console.log('Original price changed for', pricing.countryCode, 'to:', value);
                             updateCountryPricing(pricing.countryCode, 'originalPrice', value || 0);
                           }}
-                          className="w-20 text-sm"
+                          className="text-sm"
                           step="0.01"
                           min="0"
                           placeholder="0.00"
                         />
                       </div>
-                    </td>
-                    <td className="border border-border p-3">
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs">Price:</Label>
                       <div className="flex items-center gap-1">
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
@@ -505,17 +454,33 @@ export const EnhancedProductForm = ({ product, onSave, onCancel, categories }: E
                           value={pricing.price || 0}
                           onChange={(e) => {
                             const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                            console.log('Price changed for', pricing.countryCode, 'to:', value);
                             updateCountryPricing(pricing.countryCode, 'price', value || 0);
                           }}
-                          className="w-20 text-sm"
+                          className="text-sm"
                           step="0.01"
                           min="0"
                           placeholder="0.00"
                         />
                       </div>
-                    </td>
-                    <td className="border border-border p-3">
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={pricing.isFreeShipping}
+                          onCheckedChange={(checked) => {
+                            updateCountryPricing(pricing.countryCode, 'isFreeShipping', checked === true);
+                            if (checked) {
+                              updateCountryPricing(pricing.countryCode, 'shippingCharges', 0);
+                            }
+                          }}
+                        />
+                        <Label className="text-xs">Free Shipping</Label>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs">Shipping Charges:</Label>
                       <div className="flex items-center gap-1">
                         <span className="text-sm">{getCurrencySymbol(pricing.countryCode)}</span>
                         <Input
@@ -523,107 +488,83 @@ export const EnhancedProductForm = ({ product, onSave, onCancel, categories }: E
                           value={pricing.shippingCharges || 0}
                           onChange={(e) => {
                             const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                            console.log('Shipping charges changed for', pricing.countryCode, 'to:', value);
-                            // If user enters shipping charges, turn off free shipping
                             if (value > 0) {
                               updateCountryPricing(pricing.countryCode, 'isFreeShipping', false);
                             }
                             updateCountryPricing(pricing.countryCode, 'shippingCharges', value || 0);
                           }}
-                          className="w-20 text-sm"
+                          className="text-sm"
                           step="0.01"
                           min="0"
                           placeholder="0.00"
                           disabled={pricing.isFreeShipping}
                         />
                       </div>
-                    </td>
-                    <td className="border border-border p-3">
-                      <Checkbox
-                        checked={pricing.isFreeShipping}
-                        onCheckedChange={(checked) => {
-                          console.log('Free shipping changed for', pricing.countryCode, 'to:', checked);
-                          updateCountryPricing(pricing.countryCode, 'isFreeShipping', checked === true);
-                          if (checked) {
-                            updateCountryPricing(pricing.countryCode, 'shippingCharges', 0);
-                          }
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan={6} className="border border-border p-3">
-                    <Button variant="outline" onClick={addCountry} className="w-full">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add More Countries
-                    </Button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            <Button variant="outline" onClick={addCountry} className="w-fit">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Country
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Additional Product Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Additional Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Rating</Label>
-              <Input
-                type="number"
-                value={productForm.rating}
-                onChange={(e) => setProductForm({...productForm, rating: e.target.value})}
-                min="0"
-                max="5"
-                step="0.1"
-                className="form-input"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Reviews Count</Label>
-              <Input
-                type="number"
-                value={productForm.reviews}
-                onChange={(e) => setProductForm({...productForm, reviews: e.target.value})}
-                min="0"
-                className="form-input"
-              />
-            </div>
+        {/* Product Rating and Reviews */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Rating:</Label>
+            <Input
+              type="number"
+              value={productForm.rating}
+              onChange={(e) => setProductForm({...productForm, rating: e.target.value})}
+              min="0"
+              max="5"
+              step="0.1"
+              className="w-full"
+            />
           </div>
-          
-          <div className="flex gap-6">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={productForm.isOnSale}
-                onCheckedChange={(checked) => setProductForm({...productForm, isOnSale: !!checked})}
-              />
-              <Label>On Sale</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={productForm.isBestSeller}
-                onCheckedChange={(checked) => setProductForm({...productForm, isBestSeller: !!checked})}
-              />
-              <Label>Best Seller</Label>
-            </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Reviews Count:</Label>
+            <Input
+              type="number"
+              value={productForm.reviews}
+              onChange={(e) => setProductForm({...productForm, reviews: e.target.value})}
+              min="0"
+              className="w-full"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-4 pt-4 border-t">
-        <Button onClick={handleSave} className="btn-primary flex-1">
-          {product ? "Update Product" : "Add Product"}
-        </Button>
-        <Button variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
-        </Button>
+        {/* Product Flags */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={productForm.isOnSale}
+              onCheckedChange={(checked) => setProductForm({...productForm, isOnSale: !!checked})}
+            />
+            <Label className="text-sm font-medium">On Sale:</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={productForm.isBestSeller}
+              onCheckedChange={(checked) => setProductForm({...productForm, isBestSeller: !!checked})}
+            />
+            <Label className="text-sm font-medium">Best Seller:</Label>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-4 pt-4 border-t border-border">
+          <Button onClick={handleSave} className="flex-1" variant="default">
+            {product ? "Save" : "Add Product"}
+          </Button>
+          <Button variant="outline" onClick={onCancel} className="flex-1">
+            Cancel
+          </Button>
+        </div>
       </div>
     </div>
   );
