@@ -1,10 +1,12 @@
-import { X, Star, ShoppingCart, CreditCard, Heart, Share2 } from "lucide-react";
+import { useState } from "react";
+import { X, Star, ShoppingCart, CreditCard, Heart, Share2, Images } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Product } from "@/types/Product";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
 import { usePricing } from "@/hooks/usePricing";
+import { ImageSlider } from "@/components/ImageSlider";
 
 interface ProductModalProps {
   product: Product | null;
@@ -21,11 +23,20 @@ export const ProductModal = ({
   onAddToCart,
   onPlaceOrder,
 }: ProductModalProps) => {
+  const [imageSliderOpen, setImageSliderOpen] = useState(false);
+  
   if (!product) return null;
 
   const { getCountryData } = useCountryDetection();
   const countryData = getCountryData();
   const { formatPrice, formatShippingCost } = usePricing(countryData);
+
+  // Get all product images from media array
+  const productImages = product.media?.filter(m => m.type === 'image' && m.url) || [];
+  // If no media images, use the main product image
+  const allImages = productImages.length > 0 
+    ? productImages 
+    : [{ id: 'main', url: product.image, type: 'image' as const }];
 
   // Use per-country pricing if available and active
   const countryPricing = product.countryPricing?.find(
@@ -66,12 +77,19 @@ export const ProductModal = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Product Image */}
           <div className="space-y-4">
-            <div className="relative">
+            <div className="relative cursor-pointer" onClick={() => setImageSliderOpen(true)}>
               <img
-                src={product.image}
+                src={allImages[0]?.url || product.image}
                 alt={product.name}
-                className="w-full h-96 object-cover rounded-lg"
+                className="w-full h-96 object-cover rounded-lg hover:scale-105 transition-transform duration-300"
               />
+              {/* View All Images Button */}
+              {allImages.length > 1 && (
+                <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                  <Images className="w-4 h-4" />
+                  {allImages.length} Photos
+                </div>
+              )}
               {product.isOnSale && (
                 <Badge className="absolute top-4 left-4 sale-badge">
                   -{discountPercentage}% OFF
@@ -140,35 +158,48 @@ export const ProductModal = ({
               )}
             </div>
 
+
             {/* Product Description */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-lg">Product Description</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                This is a high-quality product from MR Crush Shop. Made with premium materials 
-                and designed for worldwide customers. Perfect for daily use and built to last.
-              </p>
-            </div>
+            {product.description && (
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg">Product Description</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
+            )}
 
             {/* Features */}
             <div className="space-y-3">
               <h3 className="font-semibold text-lg">Features</h3>
               <ul className="space-y-2 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  Premium Quality Materials
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  Worldwide Shipping Available
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  30-Day Money Back Guarantee
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  24/7 Customer Support
-                </li>
+                {product.features && product.features.length > 0 ? (
+                  product.features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      {feature}
+                    </li>
+                  ))
+                ) : (
+                  <>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      Premium Quality Materials
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      Worldwide Shipping Available
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      30-Day Money Back Guarantee
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      24/7 Customer Support
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
 
@@ -236,6 +267,14 @@ export const ProductModal = ({
             </div>
           </div>
         </div>
+        
+        {/* Image Slider Modal */}
+        <ImageSlider
+          isOpen={imageSliderOpen}
+          onClose={() => setImageSliderOpen(false)}
+          images={allImages}
+          initialIndex={0}
+        />
       </DialogContent>
     </Dialog>
   );
